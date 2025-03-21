@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  .root {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .outer {
+    width: 200px;
+    height: 200px;
+    background-color: #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .inner {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+  }
+</style>
+
+<body>
+  <div class="root">
+    <div class="outer">
+      <div class="inner"></div>
+    </div>
+  </div>
+
+</body>
+
+<script>
+
+  // 模拟合成事件
+  const handleOuterClick = (e) => {
+    console.log('outer的合成点击事件----冒泡')
+  }
+
+  const handleInnerClick = (e) => {
+    console.log('inner的合成点击事件----冒泡')
+  }
+
+  const handleOuterClickCapture = (e) => {
+    console.log('outer的合成点击事件----捕获')
+  }
+  const handleInnerClickCapture = (e) => {
+    console.log('inner的合成点击事件----捕获')
+  }
+
+  const root = document.querySelector('.root')
+
+  root.addEventListener('click', (e) => {
+    // 获取的事件路径是冒泡顺序
+    const path = e.composedPath()
+    path.forEach(item => {
+      item.onClick && item.onClick(e)
+    })
+  })
+
+  root.addEventListener('click', (e) => {
+    // 获取的事件路径是捕获顺序
+    const path = e.composedPath()
+    path.reverse().forEach(item => {
+      item.onClickCapture && item.onClickCapture(e)
+    })
+  }, true)
+
+  const outer = document.querySelector('.outer')
+  const inner = document.querySelector('.inner')
+
+
+  // 添加属性
+  outer.onClick = handleOuterClick
+  outer.onClickCapture = handleOuterClickCapture
+  inner.onClick = handleInnerClick
+  inner.onClickCapture = handleInnerClickCapture
+
+
+  // 给document添加事件
+  document.addEventListener('click', function (e) {
+    console.log('document的click事件----冒泡')
+  })
+  document.addEventListener("click", () => {
+    console.log('document的点击事件----捕获')
+  }, true)
+
+  // 给root添加事件
+  root.addEventListener('click', function (e) {
+    console.log('root的点击事件----冒泡')
+  })
+  root.addEventListener("click", () => {
+    console.log('root的点击事件----捕获')
+  }, true)
+  // 给outer添加事件
+  outer.addEventListener('click', function (e) {
+    console.log('outer的原生点击事件----冒泡')
+  })
+  outer.addEventListener("click", () => {
+    console.log('outer的原生点击事件----捕获')
+  }, true)
+  // 给inner添加事件
+  inner.addEventListener('click', function (e) {
+    console.log('inner的原生点击事件----冒泡')
+  })
+  inner.addEventListener("click", () => {
+    console.log('inner的原生点击事件----捕获')
+  }, true)
+
+
+</script>
+
+</html>
