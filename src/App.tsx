@@ -1,11 +1,14 @@
-import EventComp from "./pages/事件委托"
+import React from "react"
+import { useRoutes, useLocation, useNavigate } from "react-router"
+import router from "@/router"
 
 function App() {
-	return (
-		<>
-			<EventComp />
-		</>
-	)
+	const navigate = useNavigate()
+	const { pathname } = useLocation()
+	if (pathname === "/") {
+		navigate("/holiday")
+	}
+	return <>{useRoutes(router)}</>
 }
 
 export default App
