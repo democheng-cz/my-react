@@ -1,3 +1,4 @@
+import dayjs, { Dayjs } from "dayjs"
 interface ShiftResult {
 	cycle: number
 	workPeriod: string
@@ -7,6 +8,8 @@ interface ShiftResult {
 	isFullWeekend: boolean
 }
 
+// 快速排序
+
 export class ShiftCalculator {
 	private startDate: Date
 	private weekdays: string[]
@@ -14,58 +17,55 @@ export class ShiftCalculator {
 	private restDaysPerCycle: number
 	private cycleDays: number
 
-	constructor(startDate: string) {
-		this.startDate = new Date(startDate)
+	constructor() {
 		this.weekdays = ["日", "一", "二", "三", "四", "五", "六"]
-		this.workDaysPerCycle = 4
+		this.workDaysPerCycle = 5
 		this.restDaysPerCycle = 2
 		this.cycleDays = this.workDaysPerCycle + this.restDaysPerCycle
 	}
 
-	private getDateAfterDays(startDate: Date, days: number): Date {
-		const date = new Date(startDate)
-		date.setDate(date.getDate() + days)
-		return date
+	private getDateAfterDays(startDate: Dayjs, days: number): Dayjs {
+		return dayjs(startDate).add(days, "day")
 	}
 
-	private formatDate(date: Date): string {
-		const month = date.getMonth() + 1
-		const day = date.getDate()
-		const weekday = this.weekdays[date.getDay()]
+	private formatDate(date: Dayjs): string {
+		const month = date.month() + 1
+		const day = date.date()
+		const weekday = this.weekdays[date.day()]
 		return `${month}月${day}日(周${weekday})`
 	}
 
-	calculateOverlap(cyclesToCheck: number = 10): ShiftResult[] {
+	calculateOverlap(
+		startTime: string,
+		cyclesToCheck: number = 10
+	): ShiftResult[] {
+		let currentDate = dayjs(startTime)
 		let results: ShiftResult[] = []
-		let currentDate = new Date(this.startDate)
 		let cycleCount = 0
 		let foundFullWeekend = false
 
-		while (cycleCount < cyclesToCheck || !foundFullWeekend) {
+		let count = 1
+
+		while (cycleCount < cyclesToCheck || (!foundFullWeekend && count < 20)) {
+			count++
+			const workStart = currentDate
 			// 工作4天
-			const workStart = new Date(currentDate)
 			const workEnd = this.getDateAfterDays(
 				workStart,
 				this.workDaysPerCycle - 1
 			)
 
 			// 休息2天
-			const restStart = this.getDateAfterDays(workEnd, 1)
-			const restEnd = this.getDateAfterDays(
-				restStart,
-				this.restDaysPerCycle - 1
-			)
+			const restStart = this.getDateAfterDays(workEnd, 0)
+			const restEnd = this.getDateAfterDays(restStart, this.restDaysPerCycle)
 
 			// 检查休息日是否包含周末
 			const restDays: string[] = []
 			let weekendOverlap = 0
-			for (
-				let d = new Date(restStart);
-				d <= restEnd;
-				d.setDate(d.getDate() + 1)
-			) {
-				restDays.push(this.formatDate(new Date(d)))
-				if (d.getDay() === 0 || d.getDay() === 6) {
+			for (let d = restStart; d.isBefore(restEnd.add(1)); d = d.add(1, "day")) {
+				// restDays.push(this.formatDate(new Date(d)))
+				restDays.push(this.formatDate(d))
+				if (d.day() === 0 || d.day() === 6) {
 					weekendOverlap++
 				}
 			}
@@ -82,9 +82,7 @@ export class ShiftCalculator {
 				restDays,
 				weekendOverlap,
 				isFullWeekend:
-					weekendOverlap === 2 &&
-					restStart.getDay() === 6 &&
-					restEnd.getDay() === 0,
+					weekendOverlap === 2 && restStart.day() === 5 && restEnd.day() === 0,
 			}
 
 			results.push(result)
@@ -97,7 +95,7 @@ export class ShiftCalculator {
 			}
 
 			// 移动到下一个周期
-			currentDate = this.getDateAfterDays(restEnd, 1)
+			currentDate = this.getDateAfterDays(restEnd, 0)
 			cycleCount++
 		}
 
